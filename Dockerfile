@@ -1,7 +1,14 @@
-FROM node:18-bullseye
+FROM python:3.11-slim
 
-# Install FFMPEG
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get install -y ffmpeg curl && rm -rf /var/lib/apt/lists/*
+
+# Install yt-dlp
+RUN pip install -U yt-dlp
+
+# Install node
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 WORKDIR /app
 
@@ -10,7 +17,5 @@ RUN npm install --production
 
 COPY . .
 
-EXPOSE 8080
-
+EXPOSE 3000
 CMD ["node", "server.js"]
-
