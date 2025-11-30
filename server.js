@@ -1,61 +1,32 @@
-// server.js
 const express = require("express");
-const ytdl = require("ytdl-core");
-const ffmpeg = require("fluent-ffmpeg");
-const { PassThrough } = require("stream");
+const { spawn } = require("child_process");
 const cors = require("cors");
 
 const app = express();
 app.use(cors());
 
-const PORT = process.env.PORT || 8080;
-
-app.get("/download", async (req, res) => {
+app.get("/download", (req, res) => {
   const url = req.query.url;
-  if (!url) {
-    return res.status(400).json({ success: false, error: "Missing URL" });
-  }
+  if (!url) return res.status(400).json({ error: "missing url" });
 
-  if (!ytdl.validateURL(url)) {
-    return res.status(400).json({ success: false, error: "Invalid YouTube URL" });
-  }
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader("Content-Disposition", 'attachment; filename="audio.mp3"');
 
-  try {
-    const info = await ytdl.getBasicInfo(url);
-    const title =
-      info.videoDetails.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 80) +
-      ".mp3";
+  const ytdlp = spawn("yt-dlp", [
+    "-f",
+    "bestaudio",
+    "--extract-audio",
+    "--audio-format",
+    "mp3",
+    "-o",
+    "-",
+    url,
+  ]);
 
-    res.setHeader("Content-Disposition", `attachment; filename="${title}"`);
-    res.setHeader("Content-Type", "audio/mpeg");
+  ytdlp.stdout.pipe(res);
 
-    const audio = ytdl(url, {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    });
-
-    const ff = ffmpeg(audio)
-      .audioBitrate(192)
-      .format("mp3")
-      .on("error", (error) => {
-        console.log("FFMPEG ERROR:", error);
-        try {
-          res.end();
-        } catch {}
-      });
-
-    const stream = new PassThrough();
-    ff.pipe(stream);
-    stream.pipe(res);
-
-  } catch (e) {
-    console.log("SERVER ERROR", e);
-    return res.status(500).json({ success: false, error: e.message });
-  }
+  ytdlp.stderr.on("data", (data) => console.log("ERROR", data.toString()));
+  ytdlp.on("close", () => res.end());
 });
 
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-app.listen(PORT, () => console.log("Server running on port", PORT));
-
+app.listen(3000, () => console.log("Server running"));
