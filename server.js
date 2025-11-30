@@ -8,7 +8,7 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 app.get("/download", async (req, res) => {
   const url = req.query.url;
@@ -58,3 +58,4 @@ app.get("/download", async (req, res) => {
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
+
