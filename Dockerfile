@@ -1,12 +1,12 @@
 FROM python:3.11-slim
 
-# Install dependencies
+# Install system deps (ffmpeg + node)
 RUN apt-get update && apt-get install -y ffmpeg curl && rm -rf /var/lib/apt/lists/*
 
 # Install yt-dlp
 RUN pip install -U yt-dlp
 
-# Install node
+# Install Node.js 18
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
@@ -17,6 +17,7 @@ RUN npm install --production
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 3000
 CMD ["node", "server.js"]
+
 
